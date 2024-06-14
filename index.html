@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Felicidades Modal</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: lightblue;
+        }
+        .modal-header .modal-title {
+            font-weight: 800;
+        }
+        .modal-header, .modal-footer, .modal-body {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .modal-dialog-centered {
+            display: flex;
+            align-items: center;
+            min-height: 100vh;
+        }
+        canvas {
+            background: lightblue;
+            display: block;
+            margin: 20px auto; /* Add margin on top */
+            border: 2px solid #333333; /* Dark gray border */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Modal -->
+    <div class="modal fade" id="felicidadesModal" tabindex="-1" role="dialog" aria-labelledby="felicidadesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="felicidadesModalLabel">🎉 Felicidades! 🎉</h5>
+                </div>
+                <div class="modal-body">
+                    Eres nuestra visitante 1.000.000, descubre tu recompensa!
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark" data-dismiss="modal">🎁 Juega y reclama tu regalo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Winning Modal -->
+    <div class="modal fade" id="winningModal" tabindex="-1" role="dialog" aria-labelledby="winningModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="winningModalLabel">🎉 Has ganado! 🎉</h5>
+                </div>
+                <div class="modal-body">
+                    Muchas gracias por tomarte la molestia de jugar, Andrea! ❤️
+                    No me quiero pasar de cursi, pero eres una persona espectacular, te has convertido en alguien súper importante para mí y me siento muy afortunada de haberme encontrado contigo.
+                    Sé que aún quedan unos días, pero quería invitarte a cenar para celebrar tu cumpleaños (si quieres quedamos el 18 y equilibramos la balanza).
+                    Te propondría un sushi, pero no te atreves osea que habrá que reservar en el Billy Bob.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark" data-dismiss="modal" onclick="location.reload();">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="myCanvas"></canvas>
+
+    <!-- Bootstrap and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('#felicidadesModal').modal('show').on('hidden.bs.modal', function () {
+                startGame();
+            });
+        });
+
+        function startGame() {
+            var canvas = document.getElementById("myCanvas");
+            var ctx = canvas.getContext("2d");
+            var ballRadius = 10;
+            var paddleHeight = 10;
+            var paddleWidth = 75;
+            var brickRowCount = 5;
+            var brickColumnCount = 3;
+            var brickPadding = 10;
+            var brickOffsetTop = 30;
+            var brickOffsetLeft = 30;
+            var score = 0;
+            var lives = 3;
+            var brickWidth;
+            var brickHeight = 20;
+            var paddleX;
+            var rightPressed = false;
+            var leftPressed = false;
+            var textFontSize;
+            var textOpacity = 0;
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth * 0.9;
+                canvas.height = window.innerHeight * 0.85; // Adjust canvas height
+                x = canvas.width / 2;
+                y = canvas.height - 30;
+                paddleX = (canvas.width - paddleWidth) / 2;
+                brickWidth = (canvas.width - brickOffsetLeft * 2 - brickPadding * (brickRowCount - 1)) / brickRowCount;
+                textFontSize = canvas.width / 25; // Adjust font size based on canvas width
+            }
+
+            var x = canvas.width / 2;
+            var y = canvas.height - 30;
+            var dx = 6; // Increased speed
+            var dy = -6; // Increased speed
+            var paddleX = (canvas.width - paddleWidth) / 2;
+
+            var bricks = [];
+            for (var c = 0; c < brickColumnCount; c++) {
+                bricks[c] = [];
+                for (var r = 0; r < brickRowCount; r++) {
+                    bricks[c][r] = { x: 0, y: 0, status: 1 };
+                }
+            }
+
+            document.addEventListener("keydown", keyDownHandler, false);
+            document.addEventListener("keyup", keyUpHandler, false);
+            document.addEventListener("mousemove", mouseMoveHandler, false);
+            canvas.addEventListener("touchmove", touchMoveHandler, false);
+
+            function keyDownHandler(e) {
+                if (e.code == "ArrowRight") {
+                    rightPressed = true;
+                }
+                else if (e.code == "ArrowLeft") {
+                    leftPressed = true;
+                }
+            }
+
+            function keyUpHandler(e) {
+                if (e.code == "ArrowRight") {
+                    rightPressed = false;
+                }
+                else if (e.code == "ArrowLeft") {
+                    leftPressed = false;
+                }
+            }
+
+            function mouseMoveHandler(e) {
+                var relativeX = e.clientX - canvas.offsetLeft;
+                if (relativeX > 0 && relativeX < canvas.width) {
+                    paddleX = relativeX - paddleWidth / 2;
+                }
+            }
+
+            function touchMoveHandler(e) {
+                var relativeX = e.touches[0].clientX - canvas.offsetLeft;
+                if (relativeX > 0 && relativeX < canvas.width) {
+                    paddleX = relativeX - paddleWidth / 2;
+                }
+                e.preventDefault();
+            }
+
+            function collisionDetection() {
+                for (var c = 0; c < brickColumnCount; c++) {
+                    for (var r = 0; r < brickRowCount; r++) {
+                        var b = bricks[c][r];
+                        if (b.status == 1) {
+                            if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                                dy = -dy;
+                                b.status = 0;
+                                score++;
+                                textOpacity = score / (brickRowCount * brickColumnCount); // Increase opacity
+                                if (score == brickRowCount * brickColumnCount) {
+                                    $('#winningModal').modal('show'); // Show the winning modal
+                                    dx = 0; // Stop the ball
+                                    dy = 0; // Stop the ball
+                                    return; // Stop further processing
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            function drawBall() {
+                ctx.beginPath();
+                ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+                ctx.fillStyle = "#333333"; // Dark gray
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            function drawPaddle() {
+                ctx.beginPath();
+                ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+                ctx.fillStyle = "#333333"; // Dark gray
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            function drawBricks() {
+                for (var c = 0; c < brickColumnCount; c++) {
+                    for (var r = 0; r < brickRowCount; r++) {
+                        if (bricks[c][r].status == 1) {
+                            var brickX = (r * (brickWidth + brickPadding)) + brickOffsetLeft;
+                            var brickY = (c * (brickHeight + brickPadding)) + brickOffsetTop;
+                            bricks[c][r].x = brickX;
+                            bricks[c][r].y = brickY;
+                            ctx.beginPath();
+                            ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                            ctx.fillStyle = "#333333"; // Dark gray
+                            ctx.fill();
+                            ctx.closePath();
+                        }
+                    }
+                }
+            }
+
+            function drawScore() {
+                ctx.font = "16px Arial";
+                ctx.fillStyle = "#333333"; // Dark gray
+                ctx.fillText("Puntuación: " + score, 55, 20);
+            }
+
+            function drawLives() {
+                ctx.font = "16px Arial";
+                ctx.fillStyle = "#333333"; // Dark gray
+                ctx.fillText("Vidas: " + lives, canvas.width - 45, 20);
+            }
+
+            function drawText() {
+                ctx.font = `${textFontSize}px Arial`;
+                ctx.fillStyle = `rgba(51, 51, 51, ${textOpacity})`; // Dark gray with varying opacity
+                ctx.textAlign = "center";
+                ctx.fillText("Felicidades adelantadas, Andrea! 🎂🎂", canvas.width / 2, 70 - textFontSize)
+                ctx.fillText("Rompe todos los bloques que hay sorpresa al final", canvas.width / 2, 70 + textFontSize)
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawText();
+                drawBricks();
+                drawBall();
+                drawPaddle();
+                drawScore();
+                drawLives();
+                collisionDetection();
+
+                if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                    dx = -dx;
+                }
+                if (y + dy < ballRadius) {
+                    dy = -dy;
+                }
+                else if (y + dy > canvas.height - ballRadius) {
+                    if (x > paddleX && x < paddleX + paddleWidth) {
+                        dy = -dy;
+                    }
+                    else {
+                        lives--;
+                        if (!lives) {
+                            alert("¡Has perdido! 😢 vuelve a intentarlo")
+                            document.location.reload();
+                        }
+                        else {
+                            x = canvas.width / 2;
+                            y = canvas.height - 30;
+                            dx = 6; // Reset to increased speed
+                            dy = -6; // Reset to increased speed
+                            paddleX = (canvas.width - paddleWidth) / 2;
+                        }
+                    }
+                }
+
+                if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                    paddleX += 7;
+                }
+                else if (leftPressed && paddleX > 0) {
+                    paddleX -= 7;
+                }
+
+                x += dx;
+                y += dy;
+                requestAnimationFrame(draw);
+            }
+
+            resizeCanvas();
+            window.addEventListener("resize", resizeCanvas);
+            draw();
+        }
+    </script>
+</body>
+</html>
